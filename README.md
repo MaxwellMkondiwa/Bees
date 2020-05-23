@@ -8,7 +8,5 @@
 * **GAMSIDE is highly recommended to use.** <br>
 * **The GAMS license including NLPEC solver is required.** <br>
 
- <br>
- <br>
 **The following is the brief description of each file** <br>
-*a0-
+* a0-
