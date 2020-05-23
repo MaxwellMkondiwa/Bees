@@ -8,9 +8,9 @@
 * **GAMSIDE is highly recommended .** <br>
 * **A GAMS license including NLPEC solver is required.** <br><br>
 
-**The following is the brief description of each file** <br>
+## The following is the brief description of each file** <br>
 * ************************************************ 
-###Calibration files
+### Calibration files
 * ***a0-Data.gms*** : stores the raw data and data source used
 * ***a-DataGen.gms*** : makes basic calculations and generates the restart file a1.g00
 * ***b-Model_MCP.gms*** : Mixed Complementarity Problem (MCP) Model. Solves the MCP model to give MPEC model a good starting point
