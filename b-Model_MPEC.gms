@@ -7,18 +7,6 @@ $offtext
 $setglobal joint2015
 $setglobal Vbound 90
 
-Set season/spring, summer, winter/
- periodseason(period, season)
- / (Feb2        ,         Mar1        ,         Mar2        ,         Apr1        ,         Apr2
-May1        ,         May2        ,         Jun1         ).spring
-(       Jun2 , Jul1        ,         Jul2        ,         Aug1        ,         Aug2        ,         Sep1
-Sep2        ,         Oct1        ) .summer
-( Oct2        ,         Nov1
-Nov2        ,         Dec1        ,         Dec2        ,         Jan1        ,         Jan2
-Feb1).winter
-
-/
-
 
 $ifthen setglobal joint2016
 $setglobal year 2016
@@ -53,13 +41,6 @@ parameter Vsave(period, location)     store observed V matrix
  Vsave(period, sublocation)= v(period, sublocation);
  honeysave(period, location)= honey(period, location);
 
-set mapregion(location,location)  map location with forage regions (left if typical location in the region)
-/
-
-hBT   .  ( hPear, hCran)
-hAKW    .  ( hAvoc,    hChCA , hCucu , hMelo , hPlum ,  hPrun ,  hSqua)
-hAppl   .  ( hchwa )
-/ ;
 
 scalar k parameter used to adjust consumer surplus/10/;
 
@@ -86,7 +67,6 @@ positive variable
          HoneyV(Period,Location)                 New Honey matrix as variable to calibrate the model
          PollPrice(Pcrop)                        Calibrated Pollination price
          PoliCost                                extra polination cost per period (universal cost for all crops)
-         VAvg(season, location)
 negative variable
          SP_SUPPLY(location,Period)         shadow price of equation   quantities shipped limited to supplies
          SP_RENTED(Location,Period)         shadow price of equation   quantities rented limited to quantities shipped minus loss
@@ -121,15 +101,6 @@ EQUATIONS
 
         objeq                                    objective function
         PoolPrice_constraint(Pcrop)              get pollination prices from shadow price of equation POLQUANT
-        VregionBal(location, location, period)   the honey location within one forage region should have the same V value each period
-        HoneyRegionBal(location, location, period) the honey location within one forage region should have the same Honey value each period
-
-        VtolUpper(period, location)
-        VtolLower(period, location)
-        HtolUpper(period, location)
-        HtolLower(period, location)
-        VseasonAvg(season, location)
-
 
 
 ;
@@ -143,7 +114,7 @@ $gdxin   TRANSPORT_MCP_oneyear_p.gdx
 $load loadhoneysales=honeysales.l
 $gdxin
 
-honeysales2.l= 80;
+honeysales2.l= loadhoneysales;
 
 *^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 *                 MPEC model Part                          *
@@ -154,44 +125,12 @@ alias (pcrop, pcrop2);
 objeq..
 obj=e= [power(honeyquantity1%t2%*honeyprice1%t2%*1000- 1000*[[(HONEYSALES2/honeyquantity1%t2%)**(1./epsilon)]* honeyprice1%t2%*HONEYSALES2+ ([min( k, (1/k)**(1/epsilon))]* honeyprice1%t2% )*HONEYSALES1 ], 2)
        +  sum(Pcrop, power( PollPrice(Pcrop)*PollReq(Pcrop%t1%)-calibrationPrices(PCrop%t1%)*PollReq(Pcrop%t1%), 2))]/1000
-      + sum((period,sublocation)$V(period, sublocation), power(VV(period, sublocation)-  sum(periodseason(period,season),VAvg(season, sublocation)), 2))
-*       + sum((period, Hlocation), power(VV(period, Hlocation)- VV(period--1, Hlocation), 2)     )
-*       + sum((period, Hlocation), power(HOneyV(period, Hlocation)- HoneyV(period--1, Hlocation), 2)     )
 ;
 
 *^^ Pollination prices equal to sum of shadow prices of polquant during pollination season
 PoolPrice_constraint(Pcrop)$sum(MapCropPollSeason(PCrop, subLocation, Period),1)..
    PollPrice(Pcrop)=e= -sum(MapCropPollSeason(PCrop, subLocation, Period), SP_POLQUANT(Period,subLocation)) ;
 
-*^^ the honey location within one forage region should have the same V value each period
-VregionBal(sublocation, sublocation2, period)
-       $mapregion(sublocation,sublocation2) ..
-          VV(Period,subLocation)=E= VV(Period,subLocation2) + Vtol(period, sublocation2);
-
-*^^ the honey location within one forage region should have the same Honey value each period
-HoneyRegionBal(sublocation, sublocation2, period)
-       $mapregion(sublocation,sublocation2) ..
-       HoneyV(Period,subLocation)=E= HoneyV(Period,subLocation2)+ Htol(period, sublocation2);
-
-VseasonAvg(season, sublocation)..
-       VAvg(season, sublocation) =E= sum(periodseason(period,season), VV(period, sublocation)$V(period, sublocation))/sum(periodseason(period,season), 1$V(period, sublocation));
-
-VtolUpper(period, sublocation2)
-          $sum(sublocation, mapregion(sublocation, sublocation2))..
-      Vtol(period, sublocation2) =L= VV(period, sublocation2)* 0.001;
-
-VtolLower(period, sublocation2)
-          $sum(sublocation, mapregion(sublocation, sublocation2))..
-      Vtol(period, sublocation2) =G= -VV(period, sublocation2)* 0.001;
-
-
-HtolUpper(period, sublocation2)
-          $sum(sublocation, mapregion(sublocation, sublocation2))..
-      Htol(period, sublocation2) =L= HoneyV(period, sublocation2)* 0.001;
-
-HtolLower(period, sublocation2)
-          $sum(sublocation, mapregion(sublocation, sublocation2))..
-      Htol(period, sublocation2) =G= - HoneyV(period, sublocation2)* 0.001;
 
 *^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 *      upper and lower bound of key varialbes              *
@@ -323,12 +262,7 @@ MODEL TRANSPORT_MPEC /FOC_Bee.Bee ,FOC_BEEA.BeeA, FOC_SPLIT.Split, FOC_HONEYSALE
                Honbal.SP_HONBAL, Mgmt2.SP_MGMT2, Honbal1.SP_HONbal1, Honbal2.SP_HONbal2
 
  objeq ,PoolPrice_constraint
-        VregionBal
-        HoneyRegionBal
-VtolUpper
-VtolLower
-HtolUpper
-HtolLower
+
 
 / ;
 
